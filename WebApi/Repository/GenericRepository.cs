@@ -1,40 +1,48 @@
-﻿using WebApi.Repository.IRepository;
+﻿using Microsoft.EntityFrameworkCore;
+using WebApi.Data;
+using WebApi.Repository.IRepository;
 
 namespace WebApi.Repository
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
-        public Task Create(T entity)
+        private readonly ApplicationDbContext _dbcontext;
+
+        public GenericRepository(ApplicationDbContext dbContext)
         {
-            throw new NotImplementedException();
+            _dbcontext = dbContext;
+        }
+        public async Task Create(T entity)
+        {
+            await _dbcontext.AddAsync(entity);
+            await Save();
         }
 
-        public Task Delete(T entity)
+        public async Task Delete(T entity)
         {
-            throw new NotImplementedException();
+            _dbcontext.Remove(entity);
+            await Save();
         }
 
-        public Task<T> Get(int id)
+        public async Task<T> Get(int id)
         {
-            throw new NotImplementedException();
+            return await _dbcontext.Set<T>().FindAsync(id);
         }
 
-        public Task<List<T>> GetAll()
+        public async Task<List<T>> GetAll()
         {
-            throw new NotImplementedException();
+            return await _dbcontext.Set<T>().ToListAsync();
         }
 
         public bool IsRecordExists(System.Linq.Expressions.Expression<Func<T, bool>> condition)
         {
-            throw new NotImplementedException();
+            var result = _dbcontext.Set<T>().AsQueryable().Where(condition).Any();
+            return result;
         }
 
-        public Task Save()
+        public async Task Save()
         {
-            throw new NotImplementedException();
+            await _dbcontext.SaveChangesAsync();
         }
-    }
-: class
-    {
     }
 }

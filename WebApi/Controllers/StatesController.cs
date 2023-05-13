@@ -41,7 +41,7 @@ namespace WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<ActionResult<StatesDto>> GetById(int id)
         {
-            var state = await _statesRepository.GetById(id);
+            var state = await _statesRepository.Get(id);
 
             var stateDto = _mapper.Map<StatesDto>(state);
 
@@ -58,7 +58,7 @@ namespace WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         public  async Task<ActionResult<CreateStatesDto>> Create([FromBody] CreateStatesDto statesDto)
         {
-            var result = _statesRepository.IsStateExists(statesDto.Name);
+            var result = _statesRepository.IsRecordExists(x => x.Name.ToLower().Trim() == statesDto.Name.ToLower().Trim());
 
             if (result)
             {
@@ -97,7 +97,7 @@ namespace WebApi.Controllers
             {
                 return BadRequest();
             }
-            var state = await _statesRepository.GetById(id);
+            var state = await _statesRepository.Get(id);
             
             if(state == null)
             {

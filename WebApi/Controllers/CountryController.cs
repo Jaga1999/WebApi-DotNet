@@ -43,7 +43,7 @@ namespace WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<CountryDto>> GetById(int id)
         {
-            var country = await _countryRepository.GetById(id);
+            var country = await _countryRepository.Get(id);
 
             var countryDto = _mapper.Map<CountryDto>(country);
 
@@ -61,7 +61,7 @@ namespace WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<ActionResult<CreateCountryDto>> Create([FromBody]CreateCountryDto countryDto)
         {
-            var result = _countryRepository.IsCountryExists(countryDto.Name);
+            var result = _countryRepository.IsRecordExists(x => x.Name.ToLower().Trim() == countryDto.Name.ToLower().Trim());
             if (result)
             {
                 return Conflict("Country Already Exists in Database");
@@ -101,7 +101,7 @@ namespace WebApi.Controllers
                 return BadRequest();
             }
 
-            var country = await _countryRepository.GetById(id);
+            var country = await _countryRepository.Get(id);
 
             if (country == null)
             {
