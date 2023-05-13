@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using WebApi.Common;
 using WebApi.Data;
+using WebApi.Repository;
+using WebApi.Repository.IRepository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +24,20 @@ var connectionstring = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionstring));
 
 #endregion
+
+#region Configure AutoMapper
+
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+#endregion
+
+#region Configure Repository
+
+builder.Services.AddTransient<ICountryRepository, CountryRepository>();
+builder.Services.AddTransient<IStatesRepository, StatesRepository>();
+
+#endregion
+
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

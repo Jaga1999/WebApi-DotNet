@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebApi.Data;
+using WebApi.DTO.Country;
 using WebApi.Models;
+using WebApi.Repository.IRepository;
 
 namespace WebApi.Controllers
 {
@@ -9,56 +12,64 @@ namespace WebApi.Controllers
     [ApiController]
     public class CountryController : ControllerBase
     {
-        private readonly ApplicationDbContext _dbcontext;
+        private readonly ICountryRepository _countryRepository;
+        private readonly IMapper _mapper;
 
-        public CountryController(ApplicationDbContext dbContext)
+        public CountryController(ICountryRepository countryRepository,IMapper mapper)
         {
-            _dbcontext = dbContext;
+            _countryRepository = countryRepository;
+            _mapper = mapper;
         }
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<IEnumerable<Country>> GetAll()
+        public async Task<ActionResult<IEnumerable<CountryDto>>> GetAll()
         {
-            var countries = _dbcontext.Countries.ToList();
+            var countries = await _countryRepository.GetAll();
+
+            var countriesDto = _mapper.Map<List<CountryDto>>(countries);
 
             if (countries == null)
             {
                 return NoContent(); 
             }
 
-            return Ok(countries);
+            return Ok(countriesDto);
         }
 
         [HttpGet("{id:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<Country> GetById(int id)
+        public async Task<ActionResult<CountryDto>> GetById(int id)
         {
-            var country = _dbcontext.Countries.Find(id);
+            var country = await _countryRepository.GetById(id);
+
+            var countryDto = _mapper.Map<CountryDto>(country);
+
 
             if (country == null)
             {
                 return NoContent();
             }
 
-            return Ok(country);
+            return Ok(countryDto);
         }
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
-        public ActionResult<Country> Create([FromBody]Country country)
+        public async Task<ActionResult<CreateCountryDto>> Create([FromBody]CreateCountryDto countryDto)
         {
-            var result = _dbcontext.Countries.AsQueryable().Where(x => x.Name.ToLower().Trim() == country.Name.ToLower().Trim()).Any();
+            var result = _countryRepository.IsCountryExists(countryDto.Name);
             if (result)
             {
                 return Conflict("Country Already Exists in Database");
             }
 
-            _dbcontext.Countries.Add(country);
-            _dbcontext.SaveChanges();
+            var country = _mapper.Map<Country>(countryDto);
+
+            await _countryRepository.Create(country);
             return CreatedAtAction("GetById", new { id = country.Id }, country);
         }
 
@@ -66,26 +77,16 @@ namespace WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ActionResult<Country> Update(int id,[FromBody]Country country)
+        public async Task<ActionResult<Country>> Update(int id,[FromBody]UpdateCountryDto countryDto)
         {
-            if (country == null || id != country.Id)
+            if (countryDto == null || id != countryDto.Id)
             {
                 return BadRequest();
             }
 
-            var countryFromDB = _dbcontext.Countries.Find(id);
+            var county = _mapper.Map<Country>(countryDto);
 
-            if(countryFromDB == null)
-            {
-                return NotFound();
-            }
-
-            countryFromDB.Name = country.Name;
-            countryFromDB.ShortName = country.ShortName;
-            countryFromDB.CountryCode = country.CountryCode;
-
-            _dbcontext.Countries.Update(countryFromDB);
-            _dbcontext.SaveChanges();
+            await _countryRepository.Update(county);
             return NoContent();
         }
 
@@ -93,22 +94,21 @@ namespace WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ActionResult<Country> DeleteById(int id)
+        public async Task<ActionResult> DeleteById(int id)
         {
             if (id == 0)
             {
                 return BadRequest();
             }
 
-            var country = _dbcontext.Countries.Find(id);
+            var country = await _countryRepository.GetById(id);
 
             if (country == null)
             {
                 return NotFound();
             }
 
-            _dbcontext.Remove(country);
-            _dbcontext.SaveChanges();
+            await _countryRepository.Delete(country);
             return NoContent();
         }
     }
