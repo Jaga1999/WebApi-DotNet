@@ -14,11 +14,13 @@ namespace WebApi.Controllers
     {
         private readonly ICountryRepository _countryRepository;
         private readonly IMapper _mapper;
+        private readonly ILogger<CountryController> _logger;
 
-        public CountryController(ICountryRepository countryRepository,IMapper mapper)
+        public CountryController(ICountryRepository countryRepository,IMapper mapper, ILogger<CountryController> logger)
         {
             _countryRepository = countryRepository;
             _mapper = mapper;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -32,6 +34,7 @@ namespace WebApi.Controllers
 
             if (countries == null)
             {
+                _logger.LogError("Error While try to get all record");
                 return NoContent(); 
             }
 
@@ -45,13 +48,13 @@ namespace WebApi.Controllers
         {
             var country = await _countryRepository.Get(id);
 
-            var countryDto = _mapper.Map<CountryDto>(country);
-
-
             if (country == null)
             {
+                _logger.LogError($"Error While try to get record id:{id}");
                 return NoContent();
             }
+
+            var countryDto = _mapper.Map<CountryDto>(country);
 
             return Ok(countryDto);
         }

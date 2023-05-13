@@ -13,11 +13,13 @@ namespace WebApi.Controllers
     {
         private readonly IStatesRepository _statesRepository;
         private readonly IMapper _mapper;
+        private readonly ILogger<StatesController> _logger;
 
-        public StatesController(IStatesRepository statesRepository, IMapper mapper)
+        public StatesController(IStatesRepository statesRepository, IMapper mapper, ILogger<StatesController> logger)
         {
             _statesRepository = statesRepository;
             _mapper = mapper;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -26,13 +28,14 @@ namespace WebApi.Controllers
         public async Task<ActionResult<IEnumerable<StatesDto>>> GetAll() 
         { 
             var states = await _statesRepository.GetAll();
-            
-            var stateDto = _mapper.Map<List<StatesDto>>(states);
 
             if (states == null)
             {
                 return NoContent();
             }
+
+            var stateDto = _mapper.Map<List<StatesDto>>(states);
+
             return Ok(stateDto);
         }
 
